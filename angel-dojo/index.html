@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <title>距離と計算</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="cache-control" content="no-cache" />
+        <meta http-equiv="expires" content="0" />      
+    </head>
+    <body>
+        <img id="arrow_img" src="./arror.jpg">
+        <p>Geolocation: <span id="geolocation"></span></p>
+        <!-- <p>Geolocation_type: <span id="geolocation_type"></span></p> -->
+        <p>Device_orientation: <span id="device_orientation"></span></p>
+        <p>Move_arrow_angle: <span id="move_arrow_angle"></span></p>
+        <p>Distance: <span id="two_distance"></span>  m</p>
+        <button id="btn">Click me!</button>
+        <script type="module">
+            import LatLon from "./geodesy/latlon-ellipsoidal-vincenty.js";
+
+            const arrow_img = document.getElementById("arrow_img");
+            const move_arrow_angle_element = document.getElementById("move_arrow_angle");
+            const device_orientation_element = document.getElementById("device_orientation");
+            const two_distance_element = document.getElementById("two_distance");
+            const btn = document.getElementById("btn");
+            var geo = new Object();
+            
+            function geoFindMe() {
+                var geolocation_element = document.getElementById("geolocation");
+                // var geolocation_type_element = document.getElementById("geolocation_type");
+
+                if (!navigator.geolocation){
+                    geolocation_element.innerHTML = "<p>Geolocation is not supported by your browser</p>";
+                    return;
+                }
+
+                function success(position) {
+                    var latitude  = position.coords.latitude;
+                    var longitude = position.coords.longitude;
+
+                    geolocation_element.innerHTML = '<p>Latitude is ' + latitude + '° <br>Longitude is ' + longitude + '°</p>';
+                    // geolocation_type_element.innerHTML = typeof(latitude);
+                    geo.latitude = latitude
+                    geo.longitude = longitude
+                    console.log("グローバル変数を更新したよ")
+                    return ;
+                }
+
+                function error() {
+                    geolocation_element.innerHTML = "Unable to retrieve your location";
+                }
+
+                geolocation_element.innerHTML = "<p>Locating…</p>";
+
+                navigator.geolocation.getCurrentPosition(success, error);
+            }
+
+            //2点間の距離を計算する関数
+            function getTwoDistance(my_location, opponent_location) {
+                two_distance_element.innerText = my_location.distanceTo(opponent_location);  // 3519.458
+                return;
+            }
+            
+            //2点間の方位角を計算する関数
+            function getOpponentOrientation(my_location, opponent_location) {
+                return my_location.finalBearingTo(opponent_location);  // 358.1643691
+            }
+            
+            //デバイスの方向を取得する関数
+            function getMoveArrowAngle(opponent_orientation) {
+                window.addEventListener("deviceorientation", function(e) {
+                    device_orientation = e.webkitCompassHeading;
+                    device_orientation_element.innerText = device_orientation;
+                    var move_arrow_angle = opponent_orientation - device_orientation; 
+                    rotateArrow(move_arrow_angle);
+                },true)
+            }
+            
+            //矢印を回転させる関数
+            function rotateArrow(move_arrow_angle){
+                move_arrow_angle_element.innerText = move_arrow_angle; 
+                arrow_img.style.transform = "rotate(" + move_arrow_angle + "deg)";
+                return;
+            }
+            
+            //メイン関数
+            async function main(){
+                if (window.DeviceOrientationEvent || window.OrientationEvent) {
+                    geoFindMe();
+                    var my_location = new LatLon(geo.latitude, geo.longitude);
+                    if (DeviceOrientationEvent.requestPermission) {
+                        DeviceOrientationEvent.requestPermission()
+                        .then(response => {
+                            if (response == "granted") {
+                                getTwoDistance(my_location, opponent_location);
+                                var opponent_orientation = getOpponentOrientation(my_location, opponent_location);
+                                var device_orientation = getMoveArrowAngle(opponent_orientation);
+                            }
+                        })
+                        .catch(e => {
+                            console.log(e);
+                        })
+                    } else {
+                        getTwoDistance(my_location, opponent_location);
+                        var opponent_orientation = getOpponentOrientation(my_location, opponent_location);
+                        var device_orientation = getMoveArrowAngle(opponent_orientation);
+                    }
+                }
+            }
+
+            //2点の位置情報を入力してください
+            //example.1 渋谷駅と新宿駅の2点間
+            // var my_location = new LatLon(35.658034, 139.701636)// 渋谷駅
+            // var opponent_location = new LatLon(35.689738, 139.700391)// 新宿駅
+            //example.2 自宅と最寄り駅の2点間
+            //※自宅と最寄り駅の2点間は、Googlemap(https://www.google.co.jp/maps)で、緯度経度を参照してください
+            var opponent_location = new LatLon(35.758893, 139.635203);// 飯田橋駅
+
+            //ユーザのボタンクリック時の処理
+            {
+                btn.addEventListener('click', main);
+            }
+        </script>
+    </body>
+</html>
