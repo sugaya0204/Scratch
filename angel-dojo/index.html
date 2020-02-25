@@ -24,10 +24,10 @@
             const device_orientation_element = document.getElementById("device_orientation");
             const two_distance_element = document.getElementById("two_distance");
             const btn = document.getElementById("btn");
-            var geo = new Object();
+            let geo = new Object();
             
             function geoFindMe() {
-                var geolocation_element = document.getElementById("geolocation");
+                let geolocation_element = document.getElementById("geolocation");
                 // var geolocation_type_element = document.getElementById("geolocation_type");
 
                 if (!navigator.geolocation){
@@ -43,7 +43,6 @@
                     // geolocation_type_element.innerHTML = typeof(latitude);
                     geo.latitude = latitude
                     geo.longitude = longitude
-                    console.log("グローバル変数を更新したよ")
                     return ;
                 }
 
@@ -85,17 +84,17 @@
             }
             
             //メイン関数
-            async function main(){
+            function main(){
                 if (window.DeviceOrientationEvent || window.OrientationEvent) {
                     geoFindMe();
-                    var my_location = new LatLon(geo.latitude, geo.longitude);
+                    let my_location = new LatLon(geo.latitude, geo.longitude);
                     if (DeviceOrientationEvent.requestPermission) {
                         DeviceOrientationEvent.requestPermission()
                         .then(response => {
                             if (response == "granted") {
                                 getTwoDistance(my_location, opponent_location);
-                                var opponent_orientation = getOpponentOrientation(my_location, opponent_location);
-                                var device_orientation = getMoveArrowAngle(opponent_orientation);
+                                let opponent_orientation = getOpponentOrientation(my_location, opponent_location);
+                                let device_orientation = getMoveArrowAngle(opponent_orientation);
                             }
                         })
                         .catch(e => {
@@ -103,22 +102,22 @@
                         })
                     } else {
                         getTwoDistance(my_location, opponent_location);
-                        var opponent_orientation = getOpponentOrientation(my_location, opponent_location);
-                        var device_orientation = getMoveArrowAngle(opponent_orientation);
+                        let opponent_orientation = getOpponentOrientation(my_location, opponent_location);
+                        let device_orientation = getMoveArrowAngle(opponent_orientation);
                     }
                 }
             }
 
+            {
             //2点の位置情報を入力してください
             //example.1 渋谷駅と新宿駅の2点間
             // var my_location = new LatLon(35.658034, 139.701636)// 渋谷駅
             // var opponent_location = new LatLon(35.689738, 139.700391)// 新宿駅
             //example.2 自宅と最寄り駅の2点間
             //※自宅と最寄り駅の2点間は、Googlemap(https://www.google.co.jp/maps)で、緯度経度を参照してください
-            var opponent_location = new LatLon(35.758893, 139.635203);// 飯田橋駅
+            const opponent_location = new LatLon(35.758893, 139.635203);// 飯田橋駅
 
             //ユーザのボタンクリック時の処理
-            {
                 btn.addEventListener('click', main);
             }
         </script>
