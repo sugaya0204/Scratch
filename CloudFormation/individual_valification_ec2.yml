@@ -1,0 +1,76 @@
+Parameters:
+  AmiId:
+    Description: Enter the ami-id. Default is AmazonLinux2 of quick start
+    Type: String
+    Default: ami-0a1c2ec61571737db
+  InstanceType:
+    Description: Enter the instance type
+    Type: String
+    Default: t3.micro
+  SubnetId:
+    Description: Enter the subnet id
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-9a2bc4d2
+  SecurityGroupIds:
+    Description: Enter the SG ID that you want to attach to instance
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Default: sg-0b4dcdeb6fb4e747a
+  InstanceName:
+    Description: Enter the instance name
+    Type: String
+    Default: test
+  CaTag:
+    Description: Enter the CA Tag
+    Type: String
+    Default: stop
+    AllowedValues:
+      - stop
+      - timer
+  KeyPair:
+    Description: Enter the key pair
+    Type: "AWS::EC2::KeyPair::KeyName"
+    Default: my-key
+
+Resources:
+  NetWorkInterface: 
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      GroupSet: !Ref SecurityGroupIds
+      SubnetId: !Ref SubnetId
+      SourceDestCheck: true
+      Tags: 
+        - Key: Name
+          Value: !Ref InstanceName
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      BlockDeviceMappings: 
+        - DeviceName: /dev/xvda
+          Ebs: 
+#            SnapshotId: snap-xxxxxxxx
+            VolumeSize: 8
+            VolumeType: gp2
+            DeleteOnTermination: true
+            Encrypted: true
+      DisableApiTermination: false
+      EbsOptimized: true
+    #  HostResourceGroupArn: arn:aws:resource-groups:region:account:group/group-name
+      # IamInstanceProfile: #IAM Role
+      ImageId: !Ref AmiId
+      InstanceInitiatedShutdownBehavior: stop
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPair
+    #  LaunchTemplate: 
+    #    LaunchTemplateSpecification
+      Monitoring: false
+      NetworkInterfaces:
+        - NetworkInterfaceId: !Ref NetWorkInterface
+          DeviceIndex: 0
+      Tags: 
+        - Key: Name
+          Value: !Ref InstanceName
+        - Key: CA
+          Value: !Ref CaTag
+      Tenancy: default
+      # UserData: String
