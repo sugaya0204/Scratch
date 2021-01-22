@@ -1,0 +1,205 @@
+# Yml file that builds the following AWS resources
+# |Resource|Number|
+# |---|---|
+# |VPC|1|
+# |InternetGW|1|
+# |Public Subnet|1|
+# |RouteTable|1|
+
+Parameters:
+# Common
+  Prefix:
+    Description: Input a handson name.
+    Type: String
+    Default: hogehoge
+
+# VPC
+  VpcCidrBlock:
+    Description: Input a VPC IPv4 CidrBlock. ex) 192.168.0.0/16
+    Type: String
+    Default: 192.168.0.0/16
+
+# Public Subnet
+  PublicSubnetCidrBlock:
+    Description: Input a Public Subnet IPv4 CidrBlock.  ex) 192.168.0.0/24
+    Type: String
+    Default: 192.168.0.0/24
+
+# Private Subnet
+  PrivateSubnetCidrBlockA:
+    Description: Input a Private Subnet IPv4 CidrBlock.  ex) 192.168.1.0/24
+    Type: String
+    Default: 192.168.1.0/24
+  PrivateSubnetCidrBlockC:
+    Description: Input a Private Subnet IPv4 CidrBlock.  ex) 192.168.2.0/24
+    Type: String
+    Default: 192.168.2.0/24
+
+# Internet GW
+
+# Nat GW
+
+# EIP
+
+# RouteTable for Public Subnet
+
+# RouteTable for Private Subnet
+
+
+
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: Common
+        Parameters: 
+          - Prefix
+      -
+        Label:
+          default: VPC
+        Parameters: 
+          - VpcCidrBlock
+      -
+        Label:
+          default: Public Subnet
+        Parameters: 
+          - PublicSubnetCidrBlock
+      -
+        Label:
+          default: Private Subnet
+        Parameters: 
+          - PrivateSubnetCidrBlockA
+          - PrivateSubnetCidrBlockC
+
+Resources:
+# VPC
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: !Ref VpcCidrBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags: 
+        - Key: Name
+          Value: !Sub ${Prefix}-vpc
+
+# InternetGW
+  MyInternetGW:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags: 
+        - Key: Name
+          Value: !Sub ${Prefix}-igw
+  
+  MyVPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref MyInternetGW
+      VpcId: !Ref MyVPC
+
+
+# NatGW
+  MyNatGW:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt MyNatEip.AllocationId
+      SubnetId: !Ref MyPublicSubnet
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-ngw
+
+# EIP
+  MyNatEip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-ngw
+
+# PublicSubnet
+  MyPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      AvailabilityZone: ap-northeast-1a
+      CidrBlock: !Ref PublicSubnetCidrBlock
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref MyVPC
+      Tags: 
+        - Key: Name
+          Value: !Sub ${Prefix}-public-a
+
+# PrivateSubnet
+  MyPrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      CidrBlock: !Ref PrivateSubnetCidrBlockA
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-private-a
+  MyPrivateSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1c
+      CidrBlock: !Ref PrivateSubnetCidrBlockC
+      MapPublicIpOnLaunch: false
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-private-c
+
+# RouteTable for Public Subnet
+  MyPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref MyVPC
+      Tags: 
+        - Key: Name
+          Value: !Sub ${Prefix}-pub-rtb
+
+  MyPublicRoute:
+    Type: AWS::EC2::Route
+    Properties: 
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref MyInternetGW
+      RouteTableId: !Ref MyPublicRouteTable
+
+  MyPublicSubnetRouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties: 
+        RouteTableId: !Ref MyPublicRouteTable
+        SubnetId: !Ref MyPublicSubnet
+
+# RouteTable for Private Subnet
+  MyPrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-pri-rtb
+
+  MyNatRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref MyNatGW
+      RouteTableId: !Ref MyPrivateRouteTable
+
+  MyPrivateSubnetRouteTableAssociationA:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId: !Ref MyPrivateRouteTable
+        SubnetId: !Ref MyPrivateSubnetA
+  MyPrivateSubnetRouteTableAssociationC:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId: !Ref MyPrivateRouteTable
+        SubnetId: !Ref MyPrivateSubnetC
+
+
