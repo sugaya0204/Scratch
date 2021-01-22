@@ -28,10 +28,6 @@ Parameters:
   VpcId:
     Description: Input a handson name. Do not change as much as possible.
     Type: AWS::EC2::VPC::Id
-  SshInboundIp:
-    Description: Input a IP Address you want to access from. e.g. 0.0.0.0/0
-    Type: String
-    Default: "103.4.10.234/32"
 
 
 Metadata:
@@ -51,7 +47,6 @@ Metadata:
           default: SG
         Parameters: 
           - VpcId
-          - SshInboundIp
 
 Resources:
 # EC2
@@ -93,10 +88,9 @@ Resources:
       GroupDescription: !Sub Security Group attached to ${InstanceName}
       GroupName: !Sub sg_${InstanceName}
       SecurityGroupIngress:
-        -   CidrIp: !Ref SshInboundIp
-            Description: SSH port
-            FromPort: 22
-            IpProtocol: tcp
-            # SourceSecurityGroupId: String
-            # SourceSecurityGroupName: String
-            ToPort: 22
+        - Description: SSH port
+          FromPort: 22
+          IpProtocol: tcp
+          SourceSecurityGroupId: sg-0db435725e9c3d063
+          # SourceSecurityGroupName: String
+          ToPort: 22
